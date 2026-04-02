@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Watsons 商品比較</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="brand-badge">watsons</p>
+        <h1>商品快速比較</h1>
+        <p class="subtitle">掃描條碼，立即比較價格、成分、評價與適合膚質</p>
+      </header>
+
+      <section class="panel scanner-panel">
+        <h2>1. 掃描或輸入條碼</h2>
+        <p class="hint">支援相機掃描（若瀏覽器支援）與手動輸入</p>
+        <div class="scanner-actions">
+          <button id="start-scan-btn" class="btn primary">開啟相機掃描</button>
+          <button id="stop-scan-btn" class="btn ghost" disabled>停止掃描</button>
+        </div>
+        <video id="camera-preview" playsinline muted></video>
+        <div class="manual-input">
+          <input id="barcode-input" type="text" placeholder="例如：4710114128036" />
+          <button id="add-barcode-btn" class="btn secondary">加入比較</button>
+        </div>
+      </section>
+
+      <section class="panel pick-panel">
+        <h2>2. 勾選要比較的商品</h2>
+        <p class="hint">風格參考 Apple 選機：先選機型，再看下方比較表</p>
+        <div id="selector-row" class="selector-row"></div>
+      </section>
+
+      <section class="panel compare-panel">
+        <h2>3. 商品比較</h2>
+        <div id="compare-grid" class="compare-grid"></div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
