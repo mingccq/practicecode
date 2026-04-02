@@ -82,6 +82,20 @@ h2 {
   margin: 10px 0;
 }
 
+.scan-status {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.scan-status.error {
+  color: #b00020;
+}
+
+.scan-status.ok {
+  color: #0a7f40;
+}
+
 .btn {
   border: none;
   border-radius: 999px;

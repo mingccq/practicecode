@@ -48,6 +48,13 @@ const barcodeInput = document.getElementById("barcode-input");
 const addBarcodeBtn = document.getElementById("add-barcode-btn");
 const selectorRow = document.getElementById("selector-row");
 const compareGrid = document.getElementById("compare-grid");
+const scanStatus = document.getElementById("scan-status");
+
+function setScanStatus(message, type = "") {
+  if (!scanStatus) return;
+  scanStatus.textContent = message;
+  scanStatus.className = `scan-status ${type}`.trim();
+}
 
 function getProductByBarcode(barcode) {
   if (productDB[barcode]) return productDB[barcode];
@@ -149,23 +156,30 @@ barcodeInput.addEventListener("keydown", (event) => {
 
 async function startScan() {
   try {
+    if (!window.isSecureContext) {
+      setScanStatus("目前不是 HTTPS 網址，手機瀏覽器會封鎖相機。", "error");
+      return;
+    }
+
     if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
-      alert("此瀏覽器無法使用相機，請改用手動輸入。");
+      setScanStatus("此瀏覽器不支援相機存取，請改用手動輸入。", "error");
       return;
     }
 
     cameraPreview.style.display = "block";
     startScanBtn.disabled = true;
     stopScanBtn.disabled = false;
+    setScanStatus("正在啟動相機...", "");
 
     if ("BarcodeDetector" in window) {
       state.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: { ideal: "environment" } },
         audio: false,
       });
       cameraPreview.srcObject = state.stream;
       await cameraPreview.play();
       runScanLoop();
+      setScanStatus("掃描中（BarcodeDetector）", "ok");
       return;
     }
 
@@ -181,13 +195,15 @@ async function startScan() {
           }
         }
       );
+      setScanStatus("掃描中（ZXing 相容模式）", "ok");
       return;
     }
 
-    alert("目前裝置不支援條碼掃描，請改用手動輸入。");
+    setScanStatus("目前裝置不支援條碼掃描，請改用手動輸入。", "error");
     stopScan();
   } catch (error) {
-    alert("無法啟用相機，請確認權限設定。");
+    const reason = error && error.name ? `（${error.name}）` : "";
+    setScanStatus(`無法啟用相機${reason}，請檢查權限。`, "error");
     stopScan();
   }
 }
@@ -228,6 +244,9 @@ function stopScan() {
   cameraPreview.style.display = "none";
   startScanBtn.disabled = false;
   stopScanBtn.disabled = true;
+  if (!scanStatus.classList.contains("error")) {
+    setScanStatus("掃描已停止");
+  }
 }
 
 startScanBtn.addEventListener("click", startScan);
