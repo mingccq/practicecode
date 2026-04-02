@@ -73,7 +73,11 @@ function getProductByBarcode(barcode) {
 
 function addProduct(barcode) {
   if (!barcode) return;
-  const clean = barcode.trim();
+  // Normalize barcode text: ZXing may return non-digit wrapper chars.
+  // Watsons demo DB expects numeric EAN/UPC-like codes.
+  let clean = barcode.trim();
+  const digitsOnly = clean.replace(/[^\d]/g, "");
+  if (digitsOnly) clean = digitsOnly;
   if (!clean) return;
 
   const exists = state.scannedProducts.some((p) => p.id === clean);
@@ -189,7 +193,13 @@ async function startScan() {
         null,
         cameraPreview,
         (result, error) => {
-          if (result && result.text) addProduct(result.text);
+          if (result) {
+            const text =
+              (typeof result.getText === "function" ? result.getText() : undefined) ??
+              result.text ??
+              "";
+            if (text) addProduct(text);
+          }
           if (error && !(error instanceof window.ZXing.NotFoundException)) {
             // Ignore most frame-level decode errors; continue scanning.
           }
