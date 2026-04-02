@@ -38,6 +38,7 @@ const state = {
   selectedIds: new Set(),
   stream: null,
   scanLoopId: null,
+  zxingReader: null,
 };
 
 const startScanBtn = document.getElementById("start-scan-btn");
@@ -147,24 +148,47 @@ barcodeInput.addEventListener("keydown", (event) => {
 });
 
 async function startScan() {
-  if (!("BarcodeDetector" in window)) {
-    alert("此瀏覽器不支援條碼辨識，請改用手動輸入。");
-    return;
-  }
-
   try {
-    state.stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false,
-    });
-    cameraPreview.srcObject = state.stream;
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+      alert("此瀏覽器無法使用相機，請改用手動輸入。");
+      return;
+    }
+
     cameraPreview.style.display = "block";
-    await cameraPreview.play();
     startScanBtn.disabled = true;
     stopScanBtn.disabled = false;
-    runScanLoop();
+
+    if ("BarcodeDetector" in window) {
+      state.stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+      cameraPreview.srcObject = state.stream;
+      await cameraPreview.play();
+      runScanLoop();
+      return;
+    }
+
+    if (window.ZXing && window.ZXing.BrowserMultiFormatReader) {
+      state.zxingReader = new window.ZXing.BrowserMultiFormatReader();
+      await state.zxingReader.decodeFromVideoDevice(
+        null,
+        cameraPreview,
+        (result, error) => {
+          if (result && result.text) addProduct(result.text);
+          if (error && !(error instanceof window.ZXing.NotFoundException)) {
+            // Ignore most frame-level decode errors; continue scanning.
+          }
+        }
+      );
+      return;
+    }
+
+    alert("目前裝置不支援條碼掃描，請改用手動輸入。");
+    stopScan();
   } catch (error) {
     alert("無法啟用相機，請確認權限設定。");
+    stopScan();
   }
 }
 
@@ -191,6 +215,10 @@ async function runScanLoop() {
 function stopScan() {
   if (state.scanLoopId) cancelAnimationFrame(state.scanLoopId);
   state.scanLoopId = null;
+  if (state.zxingReader) {
+    state.zxingReader.reset();
+    state.zxingReader = null;
+  }
   if (state.stream) {
     state.stream.getTracks().forEach((track) => track.stop());
   }
